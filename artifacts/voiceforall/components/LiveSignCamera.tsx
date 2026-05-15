@@ -11,7 +11,6 @@ import React, {
 } from "react";
 
 import {
-  classifyHandGesture,
   drawLandmarks,
   GestureSmoother,
   type ClassifiedSign,
@@ -36,26 +35,27 @@ interface Props {
 type Keypoint = { x: number; y: number; z?: number; score?: number; name?: string };
 
 function classifyByHandPosition(landmarks: Landmark[]): ClassifiedSign {
-  const average = landmarks.reduce(
+  const coreLandmarks = [landmarks[0], landmarks[5], landmarks[9], landmarks[13], landmarks[17]].filter(Boolean);
+  const average = coreLandmarks.reduce(
     (acc, point) => ({ x: acc.x + point.x, y: acc.y + point.y }),
     { x: 0, y: 0 }
   );
-  const x = average.x / landmarks.length;
-  const y = average.y / landmarks.length;
+  const x = average.x / coreLandmarks.length;
+  const y = average.y / coreLandmarks.length;
 
-  if (y < 0.22) {
+  if (y < 0.18) {
     return { sign: "FEVER", meaning: "Fever / High temperature", confidence: 0.82, category: "health", color: "#EA580C" };
   }
-  if (y < 0.50 && x > 0.20 && x < 0.80) {
+  if (y < 0.38 && x > 0.18 && x < 0.82) {
     return { sign: "HEADACHE", meaning: "Headache / Head pain", confidence: 0.84, category: "health", color: "#9333EA" };
   }
-  if (y < 0.58 && x > 0.34 && x < 0.66) {
+  if (y < 0.52 && x > 0.28 && x < 0.72) {
     return { sign: "THROAT", meaning: "Throat pain / Cough / Breathing discomfort", confidence: 0.80, category: "health", color: "#0891B2" };
   }
-  if (y < 0.72 && x > 0.25 && x < 0.75) {
+  if (y < 0.73 && x > 0.18 && x < 0.82) {
     return { sign: "CHEST PAIN", meaning: "Chest pain / Heart", confidence: 0.86, category: "health", color: "#DC2626" };
   }
-  if (y < 0.76 && x > 0.22 && x < 0.78) {
+  if (y < 0.92 && x > 0.14 && x < 0.86) {
     return { sign: "STOMACH PAIN", meaning: "Stomach / Abdomen pain", confidence: 0.84, category: "health", color: "#D97706" };
   }
   if (x < 0.22 || x > 0.78) {
@@ -190,19 +190,19 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
       }
 
       function classifyByPoint(x: number, y: number): ClassifiedSign {
-        if (y < 0.22) {
+        if (y < 0.18) {
           return { sign: "FEVER", meaning: "Fever / High temperature", confidence: 0.78, category: "health", color: "#EA580C" };
         }
-        if (y < 0.52 && x > 0.18 && x < 0.82) {
+        if (y < 0.38 && x > 0.16 && x < 0.84) {
           return { sign: "HEADACHE", meaning: "Headache / Head pain", confidence: 0.78, category: "health", color: "#9333EA" };
         }
-        if (y < 0.60 && x > 0.32 && x < 0.68) {
+        if (y < 0.52 && x > 0.26 && x < 0.74) {
           return { sign: "THROAT", meaning: "Throat pain / Cough / Breathing discomfort", confidence: 0.76, category: "health", color: "#0891B2" };
         }
-        if (y < 0.74 && x > 0.22 && x < 0.78) {
+        if (y < 0.73 && x > 0.16 && x < 0.84) {
           return { sign: "CHEST PAIN", meaning: "Chest pain / Heart", confidence: 0.82, category: "health", color: "#DC2626" };
         }
-        if (y < 0.84 && x > 0.18 && x < 0.82) {
+        if (y < 0.92 && x > 0.12 && x < 0.88) {
           return { sign: "STOMACH PAIN", meaning: "Stomach / Abdomen pain", confidence: 0.80, category: "health", color: "#D97706" };
         }
         if (x < 0.20 || x > 0.80) {
@@ -294,11 +294,12 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
         previousFrameRef.current = new Uint8ClampedArray(frame);
 
         if (count > 35) {
-          // Use the leading/top-most motion cluster as the hand position.
-          // Averaging all movement includes the forearm and can classify head touches as stomach pain.
+          // For upper-body touches, the leading/top motion is usually the hand.
+          // For chest/stomach touches, the full motion center keeps the detected point from drifting upward.
           const handBandLimit = minY + Math.max(4, (maxY - minY) * 0.35);
           const handPixels = movingPixels.filter((p) => p.y <= handBandLimit);
-          const focusPixels = handPixels.length >= 8 ? handPixels : movingPixels;
+          const useUpperCluster = minY / ah < 0.42 && handPixels.length >= 8;
+          const focusPixels = useUpperCluster ? handPixels : movingPixels;
           const focus = focusPixels.reduce(
             (acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }),
             { x: 0, y: 0 }
@@ -364,8 +365,9 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
               // Draw skeleton overlay
               drawLandmarks(ctx, landmarks, w, h, overlayColor);
 
-              // Classify
-              const classified = classifyHandGesture(landmarks) ?? classifyByHandPosition(landmarks);
+              // For this app the camera gesture is a body-location signal:
+              // touching head/chest/stomach should beat generic finger-shape rules.
+              const classified = classifyByHandPosition(landmarks);
               const smoothed = smootherRef.current.push(classified?.sign ?? null);
 
               if (smoothed && smoothed !== lastSignRef.current) {
