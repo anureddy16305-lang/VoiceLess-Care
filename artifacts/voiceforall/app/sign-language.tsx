@@ -38,7 +38,7 @@ const STATUS_CONFIG: Record<CameraStatus, { label: string; color: string }> = {
 };
 
 const DEBOUNCE_MS = 1200;
-const MAX_SIGNS = 24;
+const MAX_SIGNS = 10;
 
 export default function SignLanguageScreen() {
   const colors = useColors();
@@ -93,9 +93,10 @@ export default function SignLanguageScreen() {
     if (last && last.sign === sign.sign && now - last.at < DEBOUNCE_MS) return;
     lastAddedRef.current = { sign: sign.sign, at: now };
 
-    // Keep only the latest stable action. This prevents the report from
-    // collecting every transitional hand position while the user moves.
-    setDetectedSigns([{ ...sign }]);
+    setDetectedSigns((prev) => {
+      if (prev.some((item) => item.sign === sign.sign)) return prev;
+      return [...prev, { ...sign }].slice(-MAX_SIGNS);
+    });
   }, [confAnim]);
 
   const handleSignCleared = useCallback(() => setCurrentSign(null), []);
