@@ -37,8 +37,7 @@ const STATUS_CONFIG: Record<CameraStatus, { label: string; color: string }> = {
   error: { label: "Error — check camera permissions", color: "#E24B4A" },
 };
 
-const DEBOUNCE_MS = 2000;
-const MAX_SIGNS = 24;
+const DEBOUNCE_MS = 1200;
 
 export default function SignLanguageScreen() {
   const colors = useColors();
@@ -93,10 +92,7 @@ export default function SignLanguageScreen() {
     if (last && last.sign === sign.sign && now - last.at < DEBOUNCE_MS) return;
     lastAddedRef.current = { sign: sign.sign, at: now };
 
-    setDetectedSigns((prev) => {
-      if (prev.length >= MAX_SIGNS) return prev;
-      return [...prev, { ...sign }];
-    });
+    setDetectedSigns([{ ...sign }]);
   }, [confAnim]);
 
   const handleSignCleared = useCallback(() => setCurrentSign(null), []);
@@ -311,7 +307,7 @@ export default function SignLanguageScreen() {
             onPress={sendToChat}
           >
             <Text style={styles.sendBtnText}>
-              Send {detectedSigns.length} sign{detectedSigns.length !== 1 ? "s" : ""} to chat →
+              Analyze {detectedSigns.length} camera action{detectedSigns.length !== 1 ? "s" : ""} →
             </Text>
           </Pressable>
         )}

@@ -167,8 +167,9 @@ export default function AudioRecordScreen() {
 
       recognitionRef.current = recognition;
       try { recognition.start(); } catch {
-        setError("Could not start microphone. Please reload and try again.");
+        setError("Could not start microphone. Type the patient symptoms below and analyze.");
         stopRecordingCleanup();
+        setPhase("recorded");
       }
     }
   }
@@ -176,7 +177,7 @@ export default function AudioRecordScreen() {
   function stopRecording() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     stopRecordingCleanup();
-    const finalText = finalTextRef.current.trim() || transcript.trim();
+    const finalText = finalTextRef.current.trim() || transcript.trim() || interimText.trim();
     if (finalText) {
       setTranscript(finalText);
       setPhase("recorded");
@@ -329,7 +330,7 @@ export default function AudioRecordScreen() {
               <Text style={[styles.readyText, { color: colors.mutedForeground }]}>
                 {voiceSupported
                   ? "Tap the button below to start. Speak naturally about your symptoms."
-                  : "Open this app in Chrome or Edge for voice recording support."}
+                  : "Speech-to-text is blocked here. Type the spoken symptoms below and analyze."}
               </Text>
             )}
           </View>
@@ -365,14 +366,13 @@ export default function AudioRecordScreen() {
           </View>
         )}
 
-        {/* Editable transcript (after recorded) */}
-        {phase === "recorded" && transcript && (
+        {phase === "ready" && (
           <View style={styles.editCard}>
             <Text style={[styles.editLabel, { color: colors.navy }]}>
-              ✏️ Review & Edit Transcript
+              Voice Text for Analysis
             </Text>
             <Text style={[styles.editHint, { color: colors.mutedForeground }]}>
-              You can correct any mistakes before analyzing
+              You can record above, or type the patient symptoms here and analyze directly.
             </Text>
             <TextInput
               style={[styles.editInput, { color: colors.navy, borderColor: "#2BBFA4" }]}
@@ -380,6 +380,30 @@ export default function AudioRecordScreen() {
               value={transcript}
               onChangeText={setTranscript}
               textAlignVertical="top"
+              placeholder="Example: I have chest pain and breathing difficulty."
+              placeholderTextColor={colors.mutedForeground}
+              accessibilityLabel="Manual voice transcript"
+            />
+          </View>
+        )}
+
+        {/* Editable transcript (after recorded) */}
+        {phase === "recorded" && (
+          <View style={styles.editCard}>
+            <Text style={[styles.editLabel, { color: colors.navy }]}>
+              Review & Edit Transcript
+            </Text>
+            <Text style={[styles.editHint, { color: colors.mutedForeground }]}>
+              You can correct mistakes before analyzing. If nothing was captured, type the symptoms here.
+            </Text>
+            <TextInput
+              style={[styles.editInput, { color: colors.navy, borderColor: "#2BBFA4" }]}
+              multiline
+              value={transcript}
+              onChangeText={setTranscript}
+              textAlignVertical="top"
+              placeholder="Example: I have fever and weakness since morning."
+              placeholderTextColor={colors.mutedForeground}
               accessibilityLabel="Edit transcript"
             />
           </View>
@@ -393,14 +417,27 @@ export default function AudioRecordScreen() {
         )}
 
         {/* CTAs */}
-        {phase === "ready" && (
+        {phase === "ready" && voiceSupported && (
           <Pressable
-            style={[styles.recordBtn, { opacity: voiceSupported ? 1 : 0.5 }]}
-            onPress={voiceSupported ? startRecording : undefined}
+            style={[styles.recordBtn, { opacity: 1 }]}
+            onPress={startRecording}
           >
             <LinearGradient colors={["#1A3A5C", "#0d2640"]} style={styles.recordBtnInner}>
               <Feather name="mic" size={22} color="#fff" />
               <Text style={styles.recordBtnText}>Start Speaking</Text>
+            </LinearGradient>
+          </Pressable>
+        )}
+
+        {phase === "ready" && (
+          <Pressable
+            style={[styles.recordBtn, { opacity: transcript.trim() ? 1 : 0.55 }]}
+            onPress={analyzeRecording}
+            disabled={!transcript.trim()}
+          >
+            <LinearGradient colors={["#2BBFA4", "#1a9b87"]} style={styles.recordBtnInner}>
+              <Feather name="activity" size={22} color="#fff" />
+              <Text style={styles.recordBtnText}>Analyze Voice Text</Text>
             </LinearGradient>
           </Pressable>
         )}
@@ -487,11 +524,11 @@ export default function AudioRecordScreen() {
           </View>
         )}
 
-        {!voiceSupported && Platform.OS !== "web" && (
+        {!voiceSupported && (
           <View style={[styles.helpBox, { backgroundColor: "#FEF3C7" }]}>
             <Feather name="globe" size={15} color="#92400E" />
             <Text style={[styles.helpText, { color: "#92400E" }]}>
-              Voice recording requires a web browser. Open this app at its web URL in Chrome or Edge.
+              For live voice capture, use Chrome or Edge and allow microphone permission. Manual transcript works in every browser.
             </Text>
           </View>
         )}
