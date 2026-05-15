@@ -78,7 +78,7 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
     const analysisCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const previousFrameRef = useRef<Uint8ClampedArray | null>(null);
     const animFrameRef = useRef<number | null>(null);
-    const smootherRef = useRef(new GestureSmoother(5, 2));
+    const smootherRef = useRef(new GestureSmoother(10, 7));
     const lastSignRef = useRef<string | null>(null);
     const mountedRef = useRef(true);
 
@@ -277,7 +277,7 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
                 Math.abs(frame[i + 1] - previous[i + 1]) +
                 Math.abs(frame[i + 2] - previous[i + 2]);
 
-              if (diff > 70) {
+              if (diff > 85) {
                 sumX += x;
                 sumY += y;
                 count += 1;
@@ -293,7 +293,7 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
 
         previousFrameRef.current = new Uint8ClampedArray(frame);
 
-        if (count > 22) {
+        if (count > 35) {
           // Use the leading/top-most motion cluster as the hand position.
           // Averaging all movement includes the forearm and can classify head touches as stomach pain.
           const handBandLimit = minY + Math.max(4, (maxY - minY) * 0.35);
