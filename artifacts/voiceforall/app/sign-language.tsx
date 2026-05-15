@@ -190,6 +190,24 @@ export default function SignLanguageScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.quickCard}>
+          <Text style={styles.quickTitle}>Offline Camera Analysis</Text>
+          <Text style={styles.quickHint}>
+            No internet needed. Tap the action the patient is showing and the app will immediately create the medical report.
+          </Text>
+          <View style={styles.quickGrid}>
+            {QUICK_SIGNS.map((s) => (
+              <Pressable
+                key={s.sign}
+                style={[styles.quickPill, { borderColor: s.color, backgroundColor: s.color + "18" }]}
+                onPress={() => analyzeQuickSign(s)}
+              >
+                <Text style={[styles.quickPillText, { color: s.color }]}>{s.sign}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
         {/* Camera viewport */}
         <View style={styles.cameraBox}>
           {running ? (
@@ -302,24 +320,6 @@ export default function SignLanguageScreen() {
             <Text style={styles.signsHint}>Tap a sign to remove it</Text>
           </View>
         )}
-
-        <View style={styles.quickCard}>
-          <Text style={styles.quickTitle}>Direct Camera Analysis</Text>
-          <Text style={styles.quickHint}>
-            Tap the action the patient is showing. This immediately creates the report, even if camera permission or AI detection is not working.
-          </Text>
-          <View style={styles.quickGrid}>
-            {QUICK_SIGNS.map((s) => (
-              <Pressable
-                key={s.sign}
-                style={[styles.quickPill, { borderColor: s.color, backgroundColor: s.color + "18" }]}
-                onPress={() => analyzeQuickSign(s)}
-              >
-                <Text style={[styles.quickPillText, { color: s.color }]}>{s.sign}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
 
         {/* Controls */}
         <View style={styles.ctrlRow}>

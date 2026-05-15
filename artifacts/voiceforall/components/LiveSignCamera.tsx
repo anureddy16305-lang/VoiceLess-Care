@@ -179,7 +179,7 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
           detectLoop();
         } catch (err) {
           console.error("TF.js model load error:", err);
-          if (!cancelled) onStatusChange("error", "Model failed to load. Check your internet connection.");
+          if (!cancelled) onStatusChange("error", "Live AI model could not start. Use Offline Camera Analysis buttons below.");
         }
       }
 
