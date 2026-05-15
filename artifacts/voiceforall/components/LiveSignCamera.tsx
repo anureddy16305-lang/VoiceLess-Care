@@ -34,35 +34,79 @@ interface Props {
 
 type Keypoint = { x: number; y: number; z?: number; score?: number; name?: string };
 
-function classifyByHandPosition(landmarks: Landmark[]): ClassifiedSign {
-  const coreLandmarks = [landmarks[0], landmarks[5], landmarks[9], landmarks[13], landmarks[17]].filter(Boolean);
-  const average = coreLandmarks.reduce(
-    (acc, point) => ({ x: acc.x + point.x, y: acc.y + point.y }),
-    { x: 0, y: 0 }
-  );
-  const x = average.x / coreLandmarks.length;
-  const y = average.y / coreLandmarks.length;
-
+function classifyByBodyPoint(x: number, y: number, confidence = 0.82): ClassifiedSign {
   if (y < 0.18) {
-    return { sign: "FEVER", meaning: "Fever / High temperature", confidence: 0.82, category: "health", color: "#EA580C" };
+    return { sign: "FEVER", meaning: "Fever / High temperature", confidence, category: "health", color: "#EA580C" };
   }
   if (y < 0.38 && x > 0.18 && x < 0.82) {
-    return { sign: "HEADACHE", meaning: "Headache / Head pain", confidence: 0.84, category: "health", color: "#9333EA" };
+    return { sign: "HEADACHE", meaning: "Headache / Head pain", confidence, category: "health", color: "#9333EA" };
   }
   if (y < 0.52 && x > 0.28 && x < 0.72) {
-    return { sign: "THROAT", meaning: "Throat pain / Cough / Breathing discomfort", confidence: 0.80, category: "health", color: "#0891B2" };
+    return { sign: "THROAT", meaning: "Throat pain / Cough / Breathing discomfort", confidence, category: "health", color: "#0891B2" };
   }
   if (y < 0.73 && x > 0.18 && x < 0.82) {
-    return { sign: "CHEST PAIN", meaning: "Chest pain / Heart", confidence: 0.86, category: "health", color: "#DC2626" };
+    return { sign: "CHEST PAIN", meaning: "Chest pain / Heart", confidence, category: "health", color: "#DC2626" };
   }
   if (y < 0.92 && x > 0.14 && x < 0.86) {
-    return { sign: "STOMACH PAIN", meaning: "Stomach / Abdomen pain", confidence: 0.84, category: "health", color: "#D97706" };
+    return { sign: "STOMACH PAIN", meaning: "Stomach / Abdomen pain", confidence, category: "health", color: "#D97706" };
   }
   if (x < 0.22 || x > 0.78) {
-    return { sign: "EMERGENCY", meaning: "Emergency need help", confidence: 0.78, category: "health", color: "#DC2626" };
+    return { sign: "EMERGENCY", meaning: "Emergency need help", confidence: Math.max(0.74, confidence - 0.04), category: "health", color: "#DC2626" };
   }
 
-  return { sign: "PAIN", meaning: "Pain / Hurting", confidence: 0.74, category: "health", color: "#E24B4A" };
+  return { sign: "PAIN", meaning: "Pain / Hurting", confidence: Math.max(0.72, confidence - 0.08), category: "health", color: "#E24B4A" };
+}
+
+function getHandBoxCenter(landmarks: Landmark[]) {
+  let minX = 1;
+  let minY = 1;
+  let maxX = 0;
+  let maxY = 0;
+
+  for (const point of landmarks) {
+    minX = Math.min(minX, point.x);
+    minY = Math.min(minY, point.y);
+    maxX = Math.max(maxX, point.x);
+    maxY = Math.max(maxY, point.y);
+  }
+
+  return {
+    x: (minX + maxX) / 2,
+    y: (minY + maxY) / 2,
+  };
+}
+
+function classifyByHandPosition(landmarks: Landmark[]): ClassifiedSign {
+  const { x, y } = getHandBoxCenter(landmarks);
+  return classifyByBodyPoint(x, y, 0.84);
+}
+
+function drawBodyGuides(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const zones = [
+    { y: 0, height: 0.18, label: "FEVER", color: "rgba(234,88,12,0.12)" },
+    { y: 0.18, height: 0.20, label: "HEAD", color: "rgba(147,51,234,0.12)" },
+    { y: 0.38, height: 0.14, label: "THROAT", color: "rgba(8,145,178,0.12)" },
+    { y: 0.52, height: 0.21, label: "CHEST", color: "rgba(220,38,38,0.12)" },
+    { y: 0.73, height: 0.19, label: "STOMACH", color: "rgba(217,119,6,0.14)" },
+  ];
+
+  ctx.save();
+  ctx.font = "bold 13px Arial";
+  ctx.textBaseline = "middle";
+  for (const zone of zones) {
+    const top = zone.y * h;
+    const height = zone.height * h;
+    ctx.fillStyle = zone.color;
+    ctx.fillRect(0, top, w, height);
+    ctx.strokeStyle = "rgba(255,255,255,0.22)";
+    ctx.beginPath();
+    ctx.moveTo(0, top);
+    ctx.lineTo(w, top);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,0.82)";
+    ctx.fillText(zone.label, 14, top + height / 2);
+  }
+  ctx.restore();
 }
 
 const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
@@ -190,25 +234,7 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
       }
 
       function classifyByPoint(x: number, y: number): ClassifiedSign {
-        if (y < 0.18) {
-          return { sign: "FEVER", meaning: "Fever / High temperature", confidence: 0.78, category: "health", color: "#EA580C" };
-        }
-        if (y < 0.38 && x > 0.16 && x < 0.84) {
-          return { sign: "HEADACHE", meaning: "Headache / Head pain", confidence: 0.78, category: "health", color: "#9333EA" };
-        }
-        if (y < 0.52 && x > 0.26 && x < 0.74) {
-          return { sign: "THROAT", meaning: "Throat pain / Cough / Breathing discomfort", confidence: 0.76, category: "health", color: "#0891B2" };
-        }
-        if (y < 0.73 && x > 0.16 && x < 0.84) {
-          return { sign: "CHEST PAIN", meaning: "Chest pain / Heart", confidence: 0.82, category: "health", color: "#DC2626" };
-        }
-        if (y < 0.92 && x > 0.12 && x < 0.88) {
-          return { sign: "STOMACH PAIN", meaning: "Stomach / Abdomen pain", confidence: 0.80, category: "health", color: "#D97706" };
-        }
-        if (x < 0.20 || x > 0.80) {
-          return { sign: "EMERGENCY", meaning: "Emergency need help", confidence: 0.76, category: "health", color: "#DC2626" };
-        }
-        return { sign: "PAIN", meaning: "Pain / Hurting", confidence: 0.72, category: "health", color: "#E24B4A" };
+        return classifyByBodyPoint(x, y, 0.80);
       }
 
       function drawLocalMarker(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, sign: ClassifiedSign) {
@@ -255,6 +281,7 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
         }
 
         overlayCtx.clearRect(0, 0, w, h);
+        drawBodyGuides(overlayCtx, w, h);
         analysisCtx.drawImage(video, 0, 0, aw, ah);
         const frame = analysisCtx.getImageData(0, 0, aw, ah).data;
         const previous = previousFrameRef.current;
@@ -305,7 +332,7 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
             { x: 0, y: 0 }
           );
           const x = focus.x / focusPixels.length / aw;
-          const y = focus.y / focusPixels.length / ah;
+          const y = ((minY + maxY) / 2) / ah;
           const sign = classifyByPoint(x, y);
           drawLocalMarker(overlayCtx, x, y, w, h, sign);
 
@@ -344,6 +371,7 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
         const ctx = canvas.getContext("2d");
         if (!ctx) { animFrameRef.current = requestAnimationFrame(detectLoop); return; }
         ctx.clearRect(0, 0, w, h);
+        drawBodyGuides(ctx, w, h);
 
         try {
           const hands = await detector.estimateHands(video) as Array<{
