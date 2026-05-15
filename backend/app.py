@@ -215,11 +215,6 @@ TEXT_KEYWORDS = [
     ("spine", "back_pain"),
     ("weak", "weakness"),
     ("dizzy", "weakness"),
-<<<<<<< HEAD
-    ("nose", "breathing_problem"),
-    ("cold", "breathing_problem"),
-    ("flu", "breathing_problem"),
-=======
     ("dizziness", "weakness"),
     ("vertigo", "weakness"),
     ("weakness", "weakness"),
@@ -235,7 +230,6 @@ TEXT_KEYWORDS = [
     ("pain", "pain"),
     ("hurting", "pain"),
     ("hurt", "pain"),
->>>>>>> f80cc36cb186f3ca27b492fa56026dae2cb2e8da
 ]
 
 
