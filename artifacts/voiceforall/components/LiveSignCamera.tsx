@@ -35,6 +35,36 @@ interface Props {
 
 type Keypoint = { x: number; y: number; z?: number; score?: number; name?: string };
 
+function classifyByHandPosition(landmarks: Landmark[]): ClassifiedSign {
+  const average = landmarks.reduce(
+    (acc, point) => ({ x: acc.x + point.x, y: acc.y + point.y }),
+    { x: 0, y: 0 }
+  );
+  const x = average.x / landmarks.length;
+  const y = average.y / landmarks.length;
+
+  if (y < 0.22) {
+    return { sign: "FEVER", meaning: "Fever / High temperature", confidence: 0.82, category: "health", color: "#EA580C" };
+  }
+  if (y < 0.34 && x > 0.25 && x < 0.75) {
+    return { sign: "HEADACHE", meaning: "Headache / Head pain", confidence: 0.84, category: "health", color: "#9333EA" };
+  }
+  if (y < 0.44 && x > 0.34 && x < 0.66) {
+    return { sign: "THROAT", meaning: "Throat pain / Cough / Breathing discomfort", confidence: 0.80, category: "health", color: "#0891B2" };
+  }
+  if (y < 0.58 && x > 0.25 && x < 0.75) {
+    return { sign: "CHEST PAIN", meaning: "Chest pain / Heart", confidence: 0.86, category: "health", color: "#DC2626" };
+  }
+  if (y < 0.76 && x > 0.22 && x < 0.78) {
+    return { sign: "STOMACH PAIN", meaning: "Stomach / Abdomen pain", confidence: 0.84, category: "health", color: "#D97706" };
+  }
+  if (x < 0.22 || x > 0.78) {
+    return { sign: "EMERGENCY", meaning: "Emergency need help", confidence: 0.78, category: "health", color: "#DC2626" };
+  }
+
+  return { sign: "PAIN", meaning: "Pain / Hurting", confidence: 0.74, category: "health", color: "#E24B4A" };
+}
+
 const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
   function LiveSignCamera(
     { onSignDetected, onSignCleared, onStatusChange, running, overlayColor = "#2BBFA4" },
@@ -46,7 +76,7 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
     const streamRef = useRef<MediaStream | null>(null);
     const detectorRef = useRef<{ estimateHands: (v: HTMLVideoElement) => Promise<unknown[]> } | null>(null);
     const animFrameRef = useRef<number | null>(null);
-    const smootherRef = useRef(new GestureSmoother(10, 6));
+    const smootherRef = useRef(new GestureSmoother(5, 2));
     const lastSignRef = useRef<string | null>(null);
     const mountedRef = useRef(true);
 
@@ -197,12 +227,12 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
               drawLandmarks(ctx, landmarks, w, h, overlayColor);
 
               // Classify
-              const classified = classifyHandGesture(landmarks);
+              const classified = classifyHandGesture(landmarks) ?? classifyByHandPosition(landmarks);
               const smoothed = smootherRef.current.push(classified?.sign ?? null);
 
               if (smoothed && smoothed !== lastSignRef.current) {
                 lastSignRef.current = smoothed;
-                if (classified) onSignDetected({ ...classified, sign: smoothed });
+                onSignDetected({ ...classified, sign: smoothed });
               } else if (!smoothed && lastSignRef.current) {
                 lastSignRef.current = null;
                 onSignCleared();
