@@ -44,11 +44,11 @@ DISEASES = {
         "specialists": ["ENT Specialist"],
     },
     "breathing_problem": {
-        "gesture": "Breathing Difficulty",
-        "disease": "Asthma / respiratory issue / breathing problem",
-        "status": "CRITICAL",
-        "advice": "Needs urgent medical help. Sit upright and go to hospital if breathing is difficult.",
-        "specialists": ["Emergency Physician", "Pulmonologist"],
+        "gesture": "Hand on Nose",
+        "disease": "Cold / flu / breathing problem",
+        "status": "NORMAL",
+        "advice": "Rest, drink warm fluids, and consult a doctor if breathing is difficult.",
+        "specialists": ["General Physician", "Pulmonologist"],
     },
     "stomach_pain": {
         "gesture": "Hand on Stomach",
@@ -122,6 +122,25 @@ DISEASES = {
     },
 }
 
+GESTURE_MAP = {
+    "nose": "breathing_problem",
+    "chest": "chest_pain",
+    "heart": "chest_pain",
+    "forehead": "fever",
+    "throat": "throat_problem",
+    "stomach": "stomach_pain",
+    "abdomen": "severe_stomach_pain",
+    "ear": "ear_problem",
+    "head": "headache",
+    "eye": "eye_problem",
+    "mouth": "vomiting",
+    "back": "back_pain",
+    "help": "emergency",
+    "injury": "injury",
+    "weak": "weakness",
+    "dizzy": "weakness",
+}
+
 TEXT_KEYWORDS = [
     ("severe chest", "severe_chest_pain"),
     ("heart attack", "severe_chest_pain"),
@@ -155,6 +174,9 @@ TEXT_KEYWORDS = [
     ("spine", "back_pain"),
     ("weak", "weakness"),
     ("dizzy", "weakness"),
+    ("nose", "breathing_problem"),
+    ("cold", "breathing_problem"),
+    ("flu", "breathing_problem"),
 ]
 
 
@@ -294,6 +316,7 @@ def voiceforall_transcribe():
 def analyze_camera_legacy():
     data = request.get_json(silent=True) or {}
     symptom = data.get("symptom", "normal")
+    symptom = GESTURE_MAP.get(symptom, symptom)
     result = DISEASES.get(symptom, DISEASES["normal"])
     return jsonify({"success": True, "result": result, "hospital_map": "https://www.google.com/maps/search/hospitals+near+me"})
 
