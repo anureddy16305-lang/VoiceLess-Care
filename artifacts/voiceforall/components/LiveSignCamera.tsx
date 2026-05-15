@@ -46,13 +46,13 @@ function classifyByHandPosition(landmarks: Landmark[]): ClassifiedSign {
   if (y < 0.22) {
     return { sign: "FEVER", meaning: "Fever / High temperature", confidence: 0.82, category: "health", color: "#EA580C" };
   }
-  if (y < 0.34 && x > 0.25 && x < 0.75) {
+  if (y < 0.50 && x > 0.20 && x < 0.80) {
     return { sign: "HEADACHE", meaning: "Headache / Head pain", confidence: 0.84, category: "health", color: "#9333EA" };
   }
-  if (y < 0.44 && x > 0.34 && x < 0.66) {
+  if (y < 0.58 && x > 0.34 && x < 0.66) {
     return { sign: "THROAT", meaning: "Throat pain / Cough / Breathing discomfort", confidence: 0.80, category: "health", color: "#0891B2" };
   }
-  if (y < 0.58 && x > 0.25 && x < 0.75) {
+  if (y < 0.72 && x > 0.25 && x < 0.75) {
     return { sign: "CHEST PAIN", meaning: "Chest pain / Heart", confidence: 0.86, category: "health", color: "#DC2626" };
   }
   if (y < 0.76 && x > 0.22 && x < 0.78) {
@@ -193,13 +193,13 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
         if (y < 0.22) {
           return { sign: "FEVER", meaning: "Fever / High temperature", confidence: 0.78, category: "health", color: "#EA580C" };
         }
-        if (y < 0.35 && x > 0.22 && x < 0.78) {
+        if (y < 0.52 && x > 0.18 && x < 0.82) {
           return { sign: "HEADACHE", meaning: "Headache / Head pain", confidence: 0.78, category: "health", color: "#9333EA" };
         }
-        if (y < 0.46 && x > 0.30 && x < 0.70) {
+        if (y < 0.60 && x > 0.32 && x < 0.68) {
           return { sign: "THROAT", meaning: "Throat pain / Cough / Breathing discomfort", confidence: 0.76, category: "health", color: "#0891B2" };
         }
-        if (y < 0.62 && x > 0.22 && x < 0.78) {
+        if (y < 0.74 && x > 0.22 && x < 0.78) {
           return { sign: "CHEST PAIN", meaning: "Chest pain / Heart", confidence: 0.82, category: "health", color: "#DC2626" };
         }
         if (y < 0.84 && x > 0.18 && x < 0.82) {
