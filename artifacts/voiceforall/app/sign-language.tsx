@@ -40,15 +40,6 @@ const STATUS_CONFIG: Record<CameraStatus, { label: string; color: string }> = {
 const DEBOUNCE_MS = 2000;
 const MAX_SIGNS = 24;
 
-const QUICK_SIGNS: ClassifiedSign[] = [
-  { sign: "CHEST PAIN", meaning: "Chest pain / Heart", confidence: 0.95, category: "health", color: "#DC2626" },
-  { sign: "BREATHING", meaning: "Breathing difficulty / Shortness of breath", confidence: 0.95, category: "health", color: "#2563EB" },
-  { sign: "FEVER", meaning: "Fever / High temperature", confidence: 0.92, category: "health", color: "#EA580C" },
-  { sign: "HEADACHE", meaning: "Headache / Head pain", confidence: 0.92, category: "health", color: "#9333EA" },
-  { sign: "STOMACH PAIN", meaning: "Stomach / Abdomen pain", confidence: 0.92, category: "health", color: "#D97706" },
-  { sign: "EMERGENCY", meaning: "Emergency need help", confidence: 0.98, category: "health", color: "#DC2626" },
-];
-
 export default function SignLanguageScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -121,19 +112,6 @@ export default function SignLanguageScreen() {
     router.push("/report");
   }
 
-  function analyzeQuickSign(sign: ClassifiedSign) {
-    cameraRef.current?.stopCamera();
-    setRunning(false);
-    setDetectedSigns([sign]);
-    setCurrentSign(sign);
-    setAnalysisInput({
-      mode: "video_sign_language",
-      activeModule: analysisInput?.activeModule ?? "general",
-      signGestures: [sign.meaning || sign.sign],
-    });
-    router.push("/report");
-  }
-
   function removeSign(i: number) {
     setDetectedSigns((prev) => prev.filter((_, idx) => idx !== i));
   }
@@ -190,24 +168,6 @@ export default function SignLanguageScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.quickCard}>
-          <Text style={styles.quickTitle}>Offline Camera Analysis</Text>
-          <Text style={styles.quickHint}>
-            No internet needed. Tap the action the patient is showing and the app will immediately create the medical report.
-          </Text>
-          <View style={styles.quickGrid}>
-            {QUICK_SIGNS.map((s) => (
-              <Pressable
-                key={s.sign}
-                style={[styles.quickPill, { borderColor: s.color, backgroundColor: s.color + "18" }]}
-                onPress={() => analyzeQuickSign(s)}
-              >
-                <Text style={[styles.quickPillText, { color: s.color }]}>{s.sign}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
         {/* Camera viewport */}
         <View style={styles.cameraBox}>
           {running ? (
@@ -509,24 +469,6 @@ const styles = StyleSheet.create({
   },
   signPillText: { fontSize: 12, fontFamily: "Inter_700Bold" },
   signsHint: { fontSize: 11, fontFamily: "Inter_400Regular", color: "#6B7280" },
-  quickCard: {
-    backgroundColor: "#111827",
-    borderRadius: 16,
-    padding: 14,
-    gap: 10,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-  },
-  quickTitle: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#F9FAFB" },
-  quickHint: { fontSize: 12, fontFamily: "Inter_400Regular", color: "#9CA3AF", lineHeight: 18 },
-  quickGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  quickPill: {
-    borderWidth: 1.5,
-    borderRadius: 18,
-    paddingHorizontal: 11,
-    paddingVertical: 8,
-  },
-  quickPillText: { fontSize: 12, fontFamily: "Inter_700Bold" },
   ctrlRow: {},
   ctrlBtn: {
     flexDirection: "row",

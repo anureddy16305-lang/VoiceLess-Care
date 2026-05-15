@@ -75,6 +75,8 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const detectorRef = useRef<{ estimateHands: (v: HTMLVideoElement) => Promise<unknown[]> } | null>(null);
+    const analysisCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    const previousFrameRef = useRef<Uint8ClampedArray | null>(null);
     const animFrameRef = useRef<number | null>(null);
     const smootherRef = useRef(new GestureSmoother(5, 2));
     const lastSignRef = useRef<string | null>(null);
@@ -110,6 +112,7 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
       canvas.style.cssText =
         "position:absolute;top:0;left:0;width:100%;height:100%;border-radius:16px;pointer-events:none;transform:scaleX(-1)";
       canvasRef.current = canvas;
+      analysisCanvasRef.current = document.createElement("canvas");
 
       container.appendChild(video);
       container.appendChild(canvas);
@@ -179,8 +182,124 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
           detectLoop();
         } catch (err) {
           console.error("TF.js model load error:", err);
-          if (!cancelled) onStatusChange("error", "Live AI model could not start. Use Offline Camera Analysis buttons below.");
+          if (!cancelled) {
+            onStatusChange("ready", "Local action detection active. Move your hand to chest, head, forehead, stomach, or side.");
+            localActionLoop();
+          }
         }
+      }
+
+      function classifyByPoint(x: number, y: number): ClassifiedSign {
+        if (y < 0.22) {
+          return { sign: "FEVER", meaning: "Fever / High temperature", confidence: 0.78, category: "health", color: "#EA580C" };
+        }
+        if (y < 0.35 && x > 0.22 && x < 0.78) {
+          return { sign: "HEADACHE", meaning: "Headache / Head pain", confidence: 0.78, category: "health", color: "#9333EA" };
+        }
+        if (y < 0.46 && x > 0.30 && x < 0.70) {
+          return { sign: "THROAT", meaning: "Throat pain / Cough / Breathing discomfort", confidence: 0.76, category: "health", color: "#0891B2" };
+        }
+        if (y < 0.62 && x > 0.22 && x < 0.78) {
+          return { sign: "CHEST PAIN", meaning: "Chest pain / Heart", confidence: 0.82, category: "health", color: "#DC2626" };
+        }
+        if (y < 0.84 && x > 0.18 && x < 0.82) {
+          return { sign: "STOMACH PAIN", meaning: "Stomach / Abdomen pain", confidence: 0.80, category: "health", color: "#D97706" };
+        }
+        if (x < 0.20 || x > 0.80) {
+          return { sign: "EMERGENCY", meaning: "Emergency need help", confidence: 0.76, category: "health", color: "#DC2626" };
+        }
+        return { sign: "PAIN", meaning: "Pain / Hurting", confidence: 0.72, category: "health", color: "#E24B4A" };
+      }
+
+      function drawLocalMarker(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, sign: ClassifiedSign) {
+        ctx.beginPath();
+        ctx.arc(x * w, y * h, 28, 0, Math.PI * 2);
+        ctx.strokeStyle = sign.color;
+        ctx.lineWidth = 5;
+        ctx.stroke();
+        ctx.fillStyle = "rgba(0,0,0,0.58)";
+        ctx.fillRect(10, 10, Math.min(330, w - 20), 44);
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 18px Arial";
+        ctx.fillText(`Detected: ${sign.sign}`, 22, 38);
+      }
+
+      function localActionLoop() {
+        if (cancelled || !mountedRef.current) return;
+        const video = videoRef.current;
+        const overlay = canvasRef.current;
+        const analysis = analysisCanvasRef.current;
+
+        if (!video || !overlay || !analysis || video.readyState < 2) {
+          animFrameRef.current = requestAnimationFrame(localActionLoop);
+          return;
+        }
+
+        const w = video.videoWidth || 640;
+        const h = video.videoHeight || 480;
+        if (overlay.width !== w || overlay.height !== h) {
+          overlay.width = w;
+          overlay.height = h;
+        }
+
+        const aw = 96;
+        const ah = 72;
+        analysis.width = aw;
+        analysis.height = ah;
+
+        const overlayCtx = overlay.getContext("2d");
+        const analysisCtx = analysis.getContext("2d", { willReadFrequently: true });
+        if (!overlayCtx || !analysisCtx) {
+          animFrameRef.current = requestAnimationFrame(localActionLoop);
+          return;
+        }
+
+        overlayCtx.clearRect(0, 0, w, h);
+        analysisCtx.drawImage(video, 0, 0, aw, ah);
+        const frame = analysisCtx.getImageData(0, 0, aw, ah).data;
+        const previous = previousFrameRef.current;
+
+        let sumX = 0;
+        let sumY = 0;
+        let count = 0;
+
+        if (previous) {
+          for (let y = 0; y < ah; y += 1) {
+            for (let x = 0; x < aw; x += 1) {
+              const i = (y * aw + x) * 4;
+              const diff =
+                Math.abs(frame[i] - previous[i]) +
+                Math.abs(frame[i + 1] - previous[i + 1]) +
+                Math.abs(frame[i + 2] - previous[i + 2]);
+
+              if (diff > 70) {
+                sumX += x;
+                sumY += y;
+                count += 1;
+              }
+            }
+          }
+        }
+
+        previousFrameRef.current = new Uint8ClampedArray(frame);
+
+        if (count > 22) {
+          const x = sumX / count / aw;
+          const y = sumY / count / ah;
+          const sign = classifyByPoint(x, y);
+          drawLocalMarker(overlayCtx, x, y, w, h, sign);
+
+          const smoothed = smootherRef.current.push(sign.sign);
+          if (smoothed && smoothed !== lastSignRef.current) {
+            lastSignRef.current = smoothed;
+            onSignDetected({ ...sign, sign: smoothed });
+          }
+          onStatusChange("ready", `Local action detected: ${sign.sign}`);
+        } else {
+          onStatusChange("no_hand", "Move your hand to the symptom area and hold briefly.");
+        }
+
+        animFrameRef.current = requestAnimationFrame(localActionLoop);
       }
 
       async function detectLoop() {
