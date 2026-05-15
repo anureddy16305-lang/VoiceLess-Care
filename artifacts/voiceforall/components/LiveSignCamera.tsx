@@ -262,6 +262,11 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
         let sumX = 0;
         let sumY = 0;
         let count = 0;
+        let minX = aw;
+        let minY = ah;
+        let maxX = 0;
+        let maxY = 0;
+        const movingPixels: Array<{ x: number; y: number }> = [];
 
         if (previous) {
           for (let y = 0; y < ah; y += 1) {
@@ -276,6 +281,11 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
                 sumX += x;
                 sumY += y;
                 count += 1;
+                minX = Math.min(minX, x);
+                minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x);
+                maxY = Math.max(maxY, y);
+                movingPixels.push({ x, y });
               }
             }
           }
@@ -284,8 +294,17 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
         previousFrameRef.current = new Uint8ClampedArray(frame);
 
         if (count > 22) {
-          const x = sumX / count / aw;
-          const y = sumY / count / ah;
+          // Use the leading/top-most motion cluster as the hand position.
+          // Averaging all movement includes the forearm and can classify head touches as stomach pain.
+          const handBandLimit = minY + Math.max(4, (maxY - minY) * 0.35);
+          const handPixels = movingPixels.filter((p) => p.y <= handBandLimit);
+          const focusPixels = handPixels.length >= 8 ? handPixels : movingPixels;
+          const focus = focusPixels.reduce(
+            (acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }),
+            { x: 0, y: 0 }
+          );
+          const x = focus.x / focusPixels.length / aw;
+          const y = focus.y / focusPixels.length / ah;
           const sign = classifyByPoint(x, y);
           drawLocalMarker(overlayCtx, x, y, w, h, sign);
 
