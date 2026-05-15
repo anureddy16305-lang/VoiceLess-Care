@@ -35,26 +35,25 @@ interface Props {
 type Keypoint = { x: number; y: number; z?: number; score?: number; name?: string };
 
 function classifyByBodyPoint(x: number, y: number, confidence = 0.82): ClassifiedSign {
-  if (y < 0.18) {
-    return { sign: "FEVER", meaning: "Fever / High temperature", confidence, category: "health", color: "#EA580C" };
+  if (y < 0.18 && x > 0.18 && x < 0.82) {
+    return { sign: "HEAD PAIN", meaning: "Headache / Head pain", confidence, category: "health", color: "#9333EA" };
   }
-  if (y < 0.38 && x > 0.18 && x < 0.82) {
-    return { sign: "HEADACHE", meaning: "Headache / Head pain", confidence, category: "health", color: "#9333EA" };
+  if (y < 0.30 && x > 0.18 && x < 0.82) {
+    return { sign: "EYE PAIN", meaning: "Eye pain / Eye problem", confidence, category: "health", color: "#0EA5E9" };
   }
-  if (y < 0.52 && x > 0.28 && x < 0.72) {
-    return { sign: "THROAT", meaning: "Throat pain / Cough / Breathing discomfort", confidence, category: "health", color: "#0891B2" };
+  if (y < 0.42 && x > 0.22 && x < 0.78) {
+    return { sign: "NOSE BREATHING", meaning: "Nose / Breathing problem", confidence, category: "health", color: "#2563EB" };
   }
-  if (y < 0.73 && x > 0.18 && x < 0.82) {
+  if (y < 0.54 && x > 0.24 && x < 0.76) {
+    return { sign: "THROAT PAIN", meaning: "Throat pain / Throat problem", confidence, category: "health", color: "#0891B2" };
+  }
+  if (y < 0.74 && x > 0.18 && x < 0.82) {
     return { sign: "CHEST PAIN", meaning: "Chest pain / Heart", confidence, category: "health", color: "#DC2626" };
   }
-  if (y < 0.92 && x > 0.14 && x < 0.86) {
-    return { sign: "STOMACH PAIN", meaning: "Stomach / Abdomen pain", confidence, category: "health", color: "#D97706" };
+  if (y < 0.94 && x > 0.14 && x < 0.86) {
+    return { sign: "STOMACH PAIN", meaning: "Stomach pain / gastric issue", confidence, category: "health", color: "#D97706" };
   }
-  if (x < 0.22 || x > 0.78) {
-    return { sign: "EMERGENCY", meaning: "Emergency need help", confidence: Math.max(0.74, confidence - 0.04), category: "health", color: "#DC2626" };
-  }
-
-  return { sign: "PAIN", meaning: "Pain / Hurting", confidence: Math.max(0.72, confidence - 0.08), category: "health", color: "#E24B4A" };
+  return { sign: "SEVERE PAIN", meaning: "Severe pain / more pain", confidence: Math.max(0.72, confidence - 0.08), category: "health", color: "#E24B4A" };
 }
 
 function getHandBoxCenter(landmarks: Landmark[]) {
@@ -83,11 +82,12 @@ function classifyByHandPosition(landmarks: Landmark[]): ClassifiedSign {
 
 function drawBodyGuides(ctx: CanvasRenderingContext2D, w: number, h: number) {
   const zones = [
-    { y: 0, height: 0.18, label: "FEVER", color: "rgba(234,88,12,0.12)" },
-    { y: 0.18, height: 0.20, label: "HEAD", color: "rgba(147,51,234,0.12)" },
-    { y: 0.38, height: 0.14, label: "THROAT", color: "rgba(8,145,178,0.12)" },
-    { y: 0.52, height: 0.21, label: "CHEST", color: "rgba(220,38,38,0.12)" },
-    { y: 0.73, height: 0.19, label: "STOMACH", color: "rgba(217,119,6,0.14)" },
+    { y: 0, height: 0.18, label: "HEAD", color: "rgba(147,51,234,0.12)" },
+    { y: 0.18, height: 0.12, label: "EYE", color: "rgba(14,165,233,0.12)" },
+    { y: 0.30, height: 0.12, label: "NOSE / BREATH", color: "rgba(37,99,235,0.12)" },
+    { y: 0.42, height: 0.12, label: "THROAT", color: "rgba(8,145,178,0.12)" },
+    { y: 0.54, height: 0.20, label: "CHEST", color: "rgba(220,38,38,0.12)" },
+    { y: 0.74, height: 0.20, label: "STOMACH", color: "rgba(217,119,6,0.14)" },
   ];
 
   ctx.save();
@@ -186,7 +186,7 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
         let stream: MediaStream;
         try {
           stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+            video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 720 } },
             audio: false,
           });
         } catch (e) {
@@ -227,7 +227,7 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
         } catch (err) {
           console.error("TF.js model load error:", err);
           if (!cancelled) {
-            onStatusChange("ready", "Local action detection active. Move your hand to chest, head, forehead, stomach, or side.");
+            onStatusChange("ready", "Local action detection active. Touch head, eye, nose, throat, chest, or stomach.");
             localActionLoop();
           }
         }
@@ -393,8 +393,7 @@ const LiveSignCamera = forwardRef<LiveSignCameraHandle, Props>(
               // Draw skeleton overlay
               drawLandmarks(ctx, landmarks, w, h, overlayColor);
 
-              // For this app the camera gesture is a body-location signal:
-              // touching head/chest/stomach should beat generic finger-shape rules.
+              // For this app the camera gesture is a body-location signal.
               const classified = classifyByHandPosition(landmarks);
               const smoothed = smootherRef.current.push(classified?.sign ?? null);
 

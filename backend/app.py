@@ -127,6 +127,13 @@ DISEASES = {
         "advice": "Rest the painful area and consult a doctor if pain is severe, spreading, or not improving.",
         "specialists": ["General Physician", "Orthopedic Doctor"],
     },
+    "severe_pain": {
+        "gesture": "Severe Localized Pain",
+        "disease": "Severe localized pain / worsening pain",
+        "status": "CRITICAL",
+        "advice": "Seek medical care urgently if the pain is increasing, unbearable, or linked with swelling, injury, fever, or weakness.",
+        "specialists": ["Emergency Physician", "General Physician", "Orthopedic Doctor"],
+    },
     "emergency": {
         "gesture": "Help Gesture",
         "disease": "Emergency condition",
@@ -153,8 +160,14 @@ DISEASES = {
 TEXT_KEYWORDS = [
     ("severe chest", "severe_chest_pain"),
     ("heart attack", "severe_chest_pain"),
+    ("severe pain", "severe_pain"),
+    ("more pain", "severe_pain"),
+    ("worsening pain", "severe_pain"),
+    ("unbearable pain", "severe_pain"),
     ("breathing", "breathing_problem"),
     ("breath", "breathing_problem"),
+    ("nose", "breathing_problem"),
+    ("shortness", "breathing_problem"),
     ("asthma", "breathing_problem"),
     ("severe stomach", "severe_stomach_pain"),
     ("appendix", "severe_stomach_pain"),
