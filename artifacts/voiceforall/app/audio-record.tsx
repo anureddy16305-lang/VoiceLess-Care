@@ -366,13 +366,13 @@ export default function AudioRecordScreen() {
           </View>
         )}
 
-        {phase === "ready" && !voiceSupported && (
+        {phase === "ready" && (
           <View style={styles.editCard}>
             <Text style={[styles.editLabel, { color: colors.navy }]}>
-              Type Voice Transcript
+              Voice Text for Analysis
             </Text>
             <Text style={[styles.editHint, { color: colors.mutedForeground }]}>
-              Type what the patient says, then create the report.
+              You can record above, or type the patient symptoms here and analyze directly.
             </Text>
             <TextInput
               style={[styles.editInput, { color: colors.navy, borderColor: "#2BBFA4" }]}
@@ -417,14 +417,27 @@ export default function AudioRecordScreen() {
         )}
 
         {/* CTAs */}
-        {phase === "ready" && (
+        {phase === "ready" && voiceSupported && (
           <Pressable
             style={[styles.recordBtn, { opacity: 1 }]}
-            onPress={voiceSupported ? startRecording : analyzeRecording}
+            onPress={startRecording}
           >
             <LinearGradient colors={["#1A3A5C", "#0d2640"]} style={styles.recordBtnInner}>
-              <Feather name={voiceSupported ? "mic" : "activity"} size={22} color="#fff" />
-              <Text style={styles.recordBtnText}>{voiceSupported ? "Start Speaking" : "Analyze Typed Voice Text"}</Text>
+              <Feather name="mic" size={22} color="#fff" />
+              <Text style={styles.recordBtnText}>Start Speaking</Text>
+            </LinearGradient>
+          </Pressable>
+        )}
+
+        {phase === "ready" && (
+          <Pressable
+            style={[styles.recordBtn, { opacity: transcript.trim() ? 1 : 0.55 }]}
+            onPress={analyzeRecording}
+            disabled={!transcript.trim()}
+          >
+            <LinearGradient colors={["#2BBFA4", "#1a9b87"]} style={styles.recordBtnInner}>
+              <Feather name="activity" size={22} color="#fff" />
+              <Text style={styles.recordBtnText}>Analyze Voice Text</Text>
             </LinearGradient>
           </Pressable>
         )}

@@ -121,6 +121,19 @@ export default function SignLanguageScreen() {
     router.push("/report");
   }
 
+  function analyzeQuickSign(sign: ClassifiedSign) {
+    cameraRef.current?.stopCamera();
+    setRunning(false);
+    setDetectedSigns([sign]);
+    setCurrentSign(sign);
+    setAnalysisInput({
+      mode: "video_sign_language",
+      activeModule: analysisInput?.activeModule ?? "general",
+      signGestures: [sign.meaning || sign.sign],
+    });
+    router.push("/report");
+  }
+
   function removeSign(i: number) {
     setDetectedSigns((prev) => prev.filter((_, idx) => idx !== i));
   }
@@ -128,14 +141,6 @@ export default function SignLanguageScreen() {
   function clearSigns() {
     setDetectedSigns([]);
     lastAddedRef.current = null;
-  }
-
-  function addQuickSign(sign: ClassifiedSign) {
-    setDetectedSigns((prev) => {
-      if (prev.length >= MAX_SIGNS) return prev;
-      return [...prev, sign];
-    });
-    setCurrentSign(sign);
   }
 
   const statusCfg = STATUS_CONFIG[status];
@@ -299,16 +304,16 @@ export default function SignLanguageScreen() {
         )}
 
         <View style={styles.quickCard}>
-          <Text style={styles.quickTitle}>Camera Analysis Backup</Text>
+          <Text style={styles.quickTitle}>Direct Camera Analysis</Text>
           <Text style={styles.quickHint}>
-            If the camera model is slow or permission is blocked, tap the action the patient is showing and create the report.
+            Tap the action the patient is showing. This immediately creates the report, even if camera permission or AI detection is not working.
           </Text>
           <View style={styles.quickGrid}>
             {QUICK_SIGNS.map((s) => (
               <Pressable
                 key={s.sign}
                 style={[styles.quickPill, { borderColor: s.color, backgroundColor: s.color + "18" }]}
-                onPress={() => addQuickSign(s)}
+                onPress={() => analyzeQuickSign(s)}
               >
                 <Text style={[styles.quickPillText, { color: s.color }]}>{s.sign}</Text>
               </Pressable>
