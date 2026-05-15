@@ -79,6 +79,8 @@ export default function SignLanguageScreen() {
     []
   );
 
+  const [diseaseInfo, setDiseaseInfo] = useState<{disease:string,advice:string,status:string,specialists:string[]} | null>(null);
+
   const handleSignDetected = useCallback((sign: ClassifiedSign) => {
     setCurrentSign(sign);
     Animated.timing(confAnim, {
@@ -93,6 +95,15 @@ export default function SignLanguageScreen() {
     lastAddedRef.current = { sign: sign.sign, at: now };
 
     setDetectedSigns([{ ...sign }]);
+
+    fetch("http://127.0.0.1:5000/api/analyze/camera", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ symptom: sign.sign.toLowerCase().replace(" pain","").replace(" breathing","").replace(" problem","") }),
+    })
+      .then(r => r.json())
+      .then(data => { if (data.result) setDiseaseInfo(data.result); })
+      .catch(() => {});
   }, [confAnim]);
 
   const handleSignCleared = useCallback(() => setCurrentSign(null), []);
@@ -246,6 +257,18 @@ export default function SignLanguageScreen() {
               {currentSign.sign}
             </Text>
             <Text style={styles.meaningText}>{currentSign.meaning}</Text>
+            {diseaseInfo && (
+              <View style={{ marginTop: 10, gap: 6 }}>
+                <View style={{ flexDirection:"row", alignItems:"center", gap:8 }}>
+                  <View style={{ backgroundColor: diseaseInfo.status === "CRITICAL" ? "#DC2626" : "#16A34A", paddingHorizontal:10, paddingVertical:3, borderRadius:20 }}>
+                    <Text style={{ color:"#fff", fontSize:11, fontWeight:"700" }}>{diseaseInfo.status}</Text>
+                  </View>
+                  <Text style={{ color:"#F9FAFB", fontSize:13, fontWeight:"700", flex:1 }}>{diseaseInfo.disease}</Text>
+                </View>
+                <Text style={{ color:"#D1D5DB", fontSize:12, lineHeight:18 }}>{diseaseInfo.advice}</Text>
+                <Text style={{ color:"#9CA3AF", fontSize:11 }}>See: {(diseaseInfo.specialists || []).join(", ")}</Text>
+              </View>
+            )}
           </View>
         )}
 
