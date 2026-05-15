@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "VoiceForAll"
+version = "1.0.0"
+id = "artifacts/voiceforall"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/" ]
+localPort = 18671
+
+[services.development]
+run = "pnpm --filter @workspace/voiceforall run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/voiceforall", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/voiceforall", "run", "serve" ]
+
+[services.env]
+PORT = "18671"
+BASE_PATH = "/"

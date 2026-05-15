@@ -1,0 +1,354 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: voiceforall
+    description: VoiceForAll health analysis
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /voiceforall/analyze:
+    post:
+      operationId: analyzeHealth
+      tags: [voiceforall]
+      summary: Analyze health input and generate medical report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HealthAnalysisRequest"
+      responses:
+        "200":
+          description: Health report generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthReport"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /voiceforall/transcribe:
+    post:
+      operationId: transcribeAudio
+      tags: [voiceforall]
+      summary: Transcribe audio to text
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TranscribeRequest"
+      responses:
+        "200":
+          description: Transcription result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscribeResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+    HealthAnalysisRequest:
+      type: object
+      properties:
+        patient_name:
+          type: string
+        patient_age:
+          type: number
+        patient_gender:
+          type: string
+          enum: [male, female, unspecified]
+        input_mode:
+          type: string
+          enum: [text, audio, video_sign_language]
+        text_input:
+          type: string
+          nullable: true
+        audio_transcript:
+          type: string
+          nullable: true
+        sign_gestures:
+          type: array
+          items:
+            type: string
+          nullable: true
+        active_module:
+          type: string
+          enum: [general, womens_health]
+      required:
+        - patient_name
+        - patient_age
+        - patient_gender
+        - input_mode
+        - active_module
+    HealthReport:
+      type: object
+      properties:
+        report_id:
+          type: string
+        generated_at:
+          type: string
+        patient:
+          type: object
+          properties:
+            name:
+              type: string
+            age:
+              type: number
+            gender:
+              type: string
+            input_mode:
+              type: string
+          required: [name, age, gender, input_mode]
+        patient_problem_summary:
+          type: object
+          properties:
+            plain_language:
+              type: string
+            patient_quote_style:
+              type: string
+            symptoms_detected:
+              type: array
+              items:
+                type: object
+                properties:
+                  symptom:
+                    type: string
+                  medical_term:
+                    type: string
+                  body_part:
+                    type: string
+                  duration:
+                    type: string
+                  severity_described:
+                    type: string
+                  frequency:
+                    type: string
+                required: [symptom, medical_term]
+            red_flags_detected:
+              type: array
+              items:
+                type: string
+          required: [plain_language, patient_quote_style, symptoms_detected, red_flags_detected]
+        clinical_analysis:
+          type: object
+          properties:
+            medical_summary:
+              type: string
+            possible_conditions:
+              type: array
+              items:
+                type: string
+            disclaimer:
+              type: string
+          required: [medical_summary, possible_conditions, disclaimer]
+        severity_assessment:
+          type: object
+          properties:
+            level:
+              type: string
+              enum: [EMERGENCY, SEVERE, MODERATE, MILD]
+            level_color:
+              type: string
+            reason:
+              type: string
+            age_adjustment_applied:
+              type: boolean
+            age_adjustment_note:
+              type: string
+              nullable: true
+            urgency_timeframe:
+              type: string
+            recommended_specialists:
+              type: array
+              items:
+                type: string
+            confirmation_question:
+              type: string
+            route_to_womens_health:
+              type: boolean
+          required: [level, level_color, reason, age_adjustment_applied, urgency_timeframe, recommended_specialists, confirmation_question, route_to_womens_health]
+        action_plan:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [hospital_referral, home_care]
+            if_hospital_referral:
+              type: object
+              nullable: true
+              properties:
+                urgency_message:
+                  type: string
+                what_to_tell_doctor:
+                  type: string
+                what_to_bring:
+                  type: array
+                  items:
+                    type: string
+                do_not_delay_if:
+                  type: array
+                  items:
+                    type: string
+              required: [urgency_message, what_to_tell_doctor, what_to_bring, do_not_delay_if]
+            if_home_care:
+              type: object
+              nullable: true
+              properties:
+                precautions:
+                  type: array
+                  items:
+                    type: string
+                warning_signs_watch_for:
+                  type: array
+                  items:
+                    type: string
+                when_to_seek_help:
+                  type: string
+              required: [precautions, warning_signs_watch_for, when_to_seek_help]
+          required: [type]
+        free_resources:
+          type: object
+          properties:
+            national_helplines:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  number:
+                    type: string
+                    nullable: true
+                  contact:
+                    type: string
+                    nullable: true
+                  url:
+                    type: string
+                    nullable: true
+                  details:
+                    type: string
+                  cost:
+                    type: string
+                required: [name, details, cost]
+          required: [national_helplines]
+        womens_health_report:
+          type: object
+          nullable: true
+          properties:
+            included:
+              type: boolean
+            content:
+              type: object
+              nullable: true
+              properties:
+                clinical_summary:
+                  type: string
+                recommended_specialists:
+                  type: array
+                  items:
+                    type: string
+                womens_free_resources:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      contact:
+                        type: string
+                      details:
+                        type: string
+                      cost:
+                        type: string
+                    required: [name, contact, details, cost]
+                privacy_note:
+                  type: string
+              required: [clinical_summary, recommended_specialists, womens_free_resources, privacy_note]
+          required: [included]
+        sign_interpretation:
+          type: object
+          nullable: true
+          properties:
+            interpreted_meaning:
+              type: string
+            confidence_level:
+              type: string
+              enum: [high, medium, low]
+            confidence_score:
+              type: number
+          required: [interpreted_meaning, confidence_level, confidence_score]
+      required:
+        - report_id
+        - generated_at
+        - patient
+        - patient_problem_summary
+        - clinical_analysis
+        - severity_assessment
+        - action_plan
+        - free_resources
+    TranscribeRequest:
+      type: object
+      properties:
+        audio_base64:
+          type: string
+        mime_type:
+          type: string
+      required:
+        - audio_base64
+        - mime_type
+    TranscribeResponse:
+      type: object
+      properties:
+        transcript:
+          type: string
+      required:
+        - transcript

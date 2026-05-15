@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "VoiceForAll",
+    "slug": "voiceforall",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "voiceforall",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1A3A5C"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.voiceforall.app"
+    },
+    "android": {
+      "package": "com.voiceforall.app"
+    },
+    "web": {
+      "favicon": "./assets/images/icon.png"
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "origin": "https://replit.com/"
+        }
+      ],
+      "expo-font",
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
