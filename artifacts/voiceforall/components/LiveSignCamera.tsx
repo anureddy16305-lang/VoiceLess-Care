@@ -35,16 +35,16 @@ interface Props {
 type Keypoint = { x: number; y: number; z?: number; score?: number; name?: string };
 
 function classifyByBodyPoint(x, y, confidence = 0.82) {
-  if (y < 0.18 && x > 0.18 && x < 0.82) return { sign: "HEAD PAIN", meaning: "Headache / Head pain", confidence, category: "health", color: "#9333EA" };
-  if (y < 0.28 && (x < 0.22 || x > 0.78)) return { sign: "EAR PAIN", meaning: "Ear pain / Ear infection", confidence, category: "health", color: "#7C3AED" };
-  if (y < 0.30 && x > 0.18 && x < 0.82) return { sign: "EYE PAIN", meaning: "Eye pain / Eye problem", confidence, category: "health", color: "#0EA5E9" };
-  if (y < 0.42 && x > 0.22 && x < 0.78) return { sign: "NOSE BREATHING", meaning: "Nose / Breathing problem", confidence, category: "health", color: "#2563EB" };
-  if (y < 0.54 && x > 0.24 && x < 0.76) return { sign: "THROAT PAIN", meaning: "Throat pain / Throat problem", confidence, category: "health", color: "#0891B2" };
-  if (y >= 0.42 && y < 0.65 && (x < 0.18 || x > 0.82)) return { sign: "SHOULDER PAIN", meaning: "Shoulder pain / muscle pain", confidence, category: "health", color: "#059669" };
-  if (y < 0.74 && x > 0.18 && x < 0.82) return { sign: "CHEST PAIN", meaning: "Chest pain / Heart", confidence, category: "health", color: "#DC2626" };
-  if (y < 0.88 && x > 0.14 && x < 0.86) return { sign: "STOMACH PAIN", meaning: "Stomach pain / gastric issue", confidence, category: "health", color: "#D97706" };
-  if (y >= 0.88) return { sign: "LEG PAIN", meaning: "Leg pain / knee pain", confidence, category: "health", color: "#B45309" };
-  return { sign: "BACK PAIN", meaning: "Back pain / spine pain", confidence, category: "health", color: "#0F766E" };
+  const fy = 1 - y;
+  if (fy < 0.18 && x > 0.18 && x < 0.82) return { sign: "LEG PAIN", meaning: "Leg pain / knee pain", confidence, category: "health", color: "#B45309" };
+  if (fy < 0.30 && x > 0.14 && x < 0.86) return { sign: "STOMACH PAIN", meaning: "Stomach pain / gastric issue", confidence, category: "health", color: "#D97706" };
+  if (fy < 0.50 && x > 0.18 && x < 0.82) return { sign: "CHEST PAIN", meaning: "Chest pain / Heart", confidence, category: "health", color: "#DC2626" };
+  if (fy < 0.60 && (x < 0.18 || x > 0.82)) return { sign: "SHOULDER PAIN", meaning: "Shoulder pain / muscle pain", confidence, category: "health", color: "#059669" };
+  if (fy < 0.62 && x > 0.24 && x < 0.76) return { sign: "THROAT PAIN", meaning: "Throat pain / Throat problem", confidence, category: "health", color: "#0891B2" };
+  if (fy < 0.72 && x > 0.22 && x < 0.78) return { sign: "NOSE BREATHING", meaning: "Nose / Breathing problem", confidence, category: "health", color: "#2563EB" };
+  if (fy < 0.78 && (x < 0.22 || x > 0.78)) return { sign: "EAR PAIN", meaning: "Ear pain / Ear infection", confidence, category: "health", color: "#7C3AED" };
+  if (fy < 0.82 && x > 0.18 && x < 0.82) return { sign: "EYE PAIN", meaning: "Eye pain / Eye problem", confidence, category: "health", color: "#0EA5E9" };
+  return { sign: "HEAD PAIN", meaning: "Headache / Head pain", confidence, category: "health", color: "#9333EA" };
 }
 
 function getHandBoxCenter(landmarks: Landmark[]) {
